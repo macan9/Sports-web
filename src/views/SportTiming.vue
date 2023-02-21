@@ -1,0 +1,150 @@
+  <template>
+    <div ref="root" class="text-center">
+      <NoticeBar left-icon="volume-o" text="在代码阅读过程中人们说脏话的频率是衡量代码质量的唯一标准。" />
+      <p class="mg20">This is a root element</p>
+
+      <Button type="primary" @click="beginExercise()" style="margin-right: 10px;">新建方案</Button>
+      <Button type="primary" @click="beginExercise()">管理方案</Button>
+      <Picker
+          title="选择方案"
+          :columns="Obj.schemeList"
+          :columns-field-names="customFieldName"
+          @confirm="onConfirm"
+      />
+
+      <div class="flex flex-column">
+        <div class="flex flex-center mg-t10">
+          <label>当前方案</label>
+        </div>
+        <div class="flex flex-center mg-t10">
+          <label>{{ Obj.scheme.name }}</label>
+        </div>
+        <div class="flex flex-center mg-t10">
+          <label>{{ Obj.scheme.description }}</label>
+        </div>
+        <div class="flex flex-center mg-t10">
+          <label>{{ Obj.scheme.background_music }}</label>
+        </div>
+      </div>
+
+      <Button type="primary" @click="beginExercise()" style="margin-right: 10px;">执行方案</Button>
+      <Button type="primary" @click="pauseExercise()">暂停执行</Button>
+      <div>正在运行:{{ Obj.scheme.name }}</div>
+      <div>第{{ nowGroup + '/' + Obj.scheme.groupOfTimes }}组</div>
+      <div v-if="isRest">正在休息</div>
+      <div >{{ countdown }}</div>
+
+
+  
+    </div>
+  </template>
+  
+  <script lang="ts" setup>
+ 
+  import { ref, reactive, onMounted } from "vue";
+  import { toRaw } from '@vue/reactivity'
+  import { Button, NoticeBar, Picker } from "vant";
+
+  import { Scheme } from "./sportTimingPages/scheme"
+  import { localSchemeList } from "@/localData/localSchemeList";
+
+  // ref() 函数用来根据给定的值创建一个  响应式的数据对象  ，传入的为 基本数据类型 例如字符串、数字、boolean 等,
+  //       返回值是一个对象，这个对象上只包含一个 value 属性,改变值要.value,而且在template中不用写.value
+  // reactive() 函数传入的为引用类型但不能代理基本类型值,返回一个  响应式的数据对象 , 想要使用创建的响应式数据也很简单，
+  //            创建出来之后，在setup中return出去，直接在template中调用即可。
+  // toRefs()  函数可以将 reactive() 创建出来的响应式对象，转换为普通的对象
+
+  const customFieldName = {
+      text: 'name',
+      value: 'id',
+  };
+  const root = ref();
+  const Obj = reactive({
+    scheme: {} as Scheme,
+    schemeList:[],
+    mapObj:{
+      i: 0,
+      j: 0,
+      k: 0,
+    }
+  });
+  let nowGroup = ref(0) 
+  let isPause = ref(1) 
+  let countdown = ref(0)  
+  let nowFrequency = ref(0)  
+  let isRest = ref(true)   
+  onMounted(() => {
+    Obj.scheme = JSON.parse(JSON.stringify(localSchemeList[0]))
+    Obj.schemeList =JSON.parse(JSON.stringify(localSchemeList)) 
+    // setTimeout(()=>{console.log(localSchemeList,Obj.schemeList)},1000)
+  });
+  const onConfirm = (proxy: object) => {
+    console.log(Obj.scheme,toRaw(proxy))
+    Obj.scheme = JSON.parse(JSON.stringify(toRaw(proxy)))
+  }
+  const beginExercise = () => {
+    // 重新开始
+    mainExercise(1,0,0,0,0,0)
+  }
+  const pauseExercise = () => {
+    if(isPause.value == 1){
+      isPause.value = 1000000 // 这里想一个办法实现无限暂停
+    }else{
+      isPause.value = 1
+      // countdown.value = 0
+      const mapObj = Obj.mapObj
+      mainExercise(nowGroup.value,nowFrequency.value,countdown.value,mapObj.i,mapObj.j,mapObj.k)
+    }
+  }
+  // 开始锻炼
+  const mainExercise = async (gv:number,fv:number,cv:number,i_:number,j_:number,k_:number) => {
+    console.log("开始运动")
+    const mapObj = Obj.mapObj
+    // 暂停需要存储的状态 nowGroup.value,nowFrequency.value,countdown.value,i_,j_,k_
+    nowGroup.value = gv
+    for( mapObj.i=i_;mapObj.i<Obj.scheme.groupOfTimes;mapObj.i++){
+      if(nowGroup.value > Obj.scheme.groupOfTimes ){
+        return
+      }else{
+        // 执行每组的操作
+        nowFrequency.value = fv
+        for( mapObj.j=j_; mapObj.j<=Obj.scheme.frequency;mapObj.j++){
+
+          // 读秒
+          console.log(`正在运行第${nowGroup.value }组,第${nowFrequency.value+1}频`);
+          for( mapObj.k=k_; mapObj.k<Obj.scheme.every_cycle_times;mapObj.k++){
+            console.log(countdown.value,isPause.value)
+            cv && (countdown.value = cv)
+            countdown.value++
+            await sleep(isPause.value)
+            if(countdown.value>=Obj.scheme.every_cycle_times){
+              countdown.value = 0
+            }
+          }
+
+          if(nowFrequency.value>Obj.scheme.frequency){
+            nowFrequency.value = 0
+            return
+          }
+          console.log("休息5秒钟");
+          await rest(5)
+          nowFrequency.value++
+        }
+        await rest(Obj.scheme.groupInterval) // 休息间隔
+        nowGroup.value++
+
+      }
+    }
+    
+    nowGroup.value = 1
+  }
+  
+  const rest = async(time:number)=>{
+        isRest.value = true
+        await sleep(time) // 休息间隔
+        isRest.value = false
+  }
+  const sleep = (time:number)=>{
+    return new Promise((resolve) => setTimeout(resolve, time*1000));
+  }
+  </script>
