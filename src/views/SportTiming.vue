@@ -28,7 +28,7 @@
       </div>
 
       <Button type="primary" @click="beginExercise()" style="margin-right: 10px;">执行方案</Button>
-      <Button type="primary" @click="pauseExercise()">暂停执行</Button>
+      <Button type="primary" @click="pauseExercise()">{{pauseStatus?'继续执行':'暂停执行'}}</Button>
       <div>正在运行:{{ Obj.scheme.name }}</div>
       <div>第{{ nowGroup + '/' + Obj.scheme.groupOfTimes }}组</div>
       <div v-if="isRest">正在休息</div>
@@ -69,9 +69,9 @@
     }
   });
   let nowGroup = ref(0) 
-  let isPause = ref(1) 
   let countdown = ref(0)  
   let nowFrequency = ref(0)  
+  let pauseStatus = ref(false)
   let isRest = ref(true)   
   onMounted(() => {
     Obj.scheme = JSON.parse(JSON.stringify(localSchemeList[0]))
@@ -84,61 +84,78 @@
   }
   const beginExercise = () => {
     // 重新开始
-    mainExercise(1,0,0,0,0,0)
+    mainExercise(false,0,0,0)
   }
   const pauseExercise = () => {
-    if(isPause.value == 1){
-      isPause.value = 1000000 // 这里想一个办法实现无限暂停
+    if(pauseStatus.value == false){
+      pauseStatus.value = true
+      Obj.mapObj.k--
+      console.log('暂停执行')
     }else{
-      isPause.value = 1
-      // countdown.value = 0
+      pauseStatus.value = false
+      console.log('继续执行')
       const mapObj = Obj.mapObj
-      mainExercise(nowGroup.value,nowFrequency.value,countdown.value,mapObj.i,mapObj.j,mapObj.k)
+      mainExercise(true,mapObj.i,mapObj.j,mapObj.k)
     }
   }
   // 开始锻炼
-  const mainExercise = async (gv:number,fv:number,cv:number,i_:number,j_:number,k_:number) => {
-    console.log("开始运动")
+  const mainExercise = async (keepE:boolean, i_:number,j_:number,k_:number) => {
+    console.log("开始运动",Obj.scheme.name )
     const mapObj = Obj.mapObj
-    // 暂停需要存储的状态 nowGroup.value,nowFrequency.value,countdown.value,i_,j_,k_
-    nowGroup.value = gv
+    // 暂停需要存储的状态 i_,j_,k_
     for( mapObj.i=i_;mapObj.i<Obj.scheme.groupOfTimes;mapObj.i++){
       if(nowGroup.value > Obj.scheme.groupOfTimes ){
         return
       }else{
-        // 执行每组的操作
-        nowFrequency.value = fv
-        for( mapObj.j=j_; mapObj.j<=Obj.scheme.frequency;mapObj.j++){
-
+        
+        // 执行组内操作 循环每一节
+        for( mapObj.j=j_; mapObj.j<Obj.scheme.frequency;mapObj.j++){
           // 读秒
           console.log(`正在运行第${nowGroup.value }组,第${nowFrequency.value+1}频`);
           for( mapObj.k=k_; mapObj.k<Obj.scheme.every_cycle_times;mapObj.k++){
-            console.log(countdown.value,isPause.value)
-            cv && (countdown.value = cv)
+            if(pauseStatus.value == true){
+              return
+            }
+            
             countdown.value++
-            await sleep(isPause.value)
-            if(countdown.value>=Obj.scheme.every_cycle_times){
+            await sleep(0)
+            // console.log(countdown.value,mapObj.k)
+            if(countdown.value == Obj.scheme.every_cycle_times){
               countdown.value = 0
+              // 继续执行时，切频时 k_ 置 0
+              if(keepE){k_ = 0}
             }
           }
 
+          
+          
           if(nowFrequency.value>Obj.scheme.frequency){
             nowFrequency.value = 0
+            if(keepE){j_ = 0}
             return
           }
-          console.log("休息5秒钟");
-          await rest(5)
           nowFrequency.value++
+          await rest(0)
+          console.log(nowFrequency.value, Obj.scheme.frequency, mapObj.j)
+          console.log("休息5秒钟，下一节");
+          
+          
         }
-        await rest(Obj.scheme.groupInterval) // 休息间隔
+        // await rest(Obj.scheme.groupInterval) // 休息间隔
         nowGroup.value++
-
       }
     }
-    
+    console.log('运动结束')
+    resetMapObj()
     nowGroup.value = 1
   }
-  
+
+  const resetMapObj = () => {
+    Obj.mapObj.i = 0
+    Obj.mapObj.j = 0
+    Obj.mapObj.k = 0
+  }
+
   const rest = async(time:number)=>{
         isRest.value = true
         await sleep(time) // 休息间隔
