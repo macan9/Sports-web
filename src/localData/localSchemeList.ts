@@ -7,8 +7,8 @@ export const localSchemeList = [
         name: "平板支撑",
         groupOfTimes: 2, // 总计组数
         groupInterval: 3, // 每组间隔 min
-        frequency: 1,   // 每组次数
-        every_cycle_times: 30, // 每次时长 s
+        frequency: 2,   // 每组节数
+        every_cycle_times: 15, // 每次时长 s
         description: "身体和腿控制在一条直线，吐气用力收紧腹肌",
         background_music: "",
         creat_date: "",
