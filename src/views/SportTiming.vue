@@ -1,7 +1,7 @@
   <template>
     <div ref="root" class="text-center">
       <NoticeBar left-icon="volume-o" text="在代码阅读过程中人们说脏话的频率是衡量代码质量的唯一标准。" />
-      <p class="mg20">This is a root element</p>
+      <!-- <p class="mg20">This is a root element</p> -->
 
       <!-- <Button type="primary" @click="beginExercise()" style="margin-right: 10px;">新建方案</Button>
       <Button type="primary" @click="beginExercise()">管理方案</Button> -->
@@ -28,7 +28,7 @@
       </div>
 
       <Button type="primary" @click="beginExercise()" style="margin-right: 10px;">执行方案</Button>
-      <Button type="primary" @click="speak('语音播报测试')" style="margin-right: 10px;">语音测试</Button>
+      <!-- <Button type="primary" @click="speak('语音播报测试')" style="margin-right: 10px;">语音测试</Button> -->
       <Button type="primary" @click="pauseExercise()">{{pauseStatus?'继续执行':'暂停执行'}}</Button>
       <div>正在运行:{{ Obj.scheme.name }}</div>
       <div>第{{ nowGroup + '/' + Obj.scheme.groupOfTimes }}组</div>
@@ -54,38 +54,6 @@
   //            创建出来之后，在setup中return出去，直接在template中调用即可。
   // toRefs()  函数可以将 reactive() 创建出来的响应式对象，转换为普通的对象
   
-  const speak = (text:string)=>{
-    useSpeak(text).then(()=>{
-      // console.log('播报完毕')
-    })
-  }
-
-  const useSpeak = (text:string) => {
-    return new Promise(function(resolve, reject) {
-        // 创建 SpeechSynthesisUtterance 对象
-        const utterance = new SpeechSynthesisUtterance(text);
-
-        // 设置语音合成参数
-        utterance.lang = 'zh-CN';
-        utterance.volume = 1;
-        utterance.pitch = 1;
-        utterance.rate = 1;
-
-        // 监听 SpeakSynthesis 的 end 事件
-        utterance.onend = function() {
-          resolve('end');
-        };
-
-        // 如果浏览器不支持 SpeechSynthesis，则返回错误
-        if (!('speechSynthesis' in window)) {
-          reject(new Error('Browser does not support SpeechSynthesis'));
-        }
-
-        // 开始语音合成
-        speechSynthesis.speak(utterance);
-    });
-  }
-
   const customFieldName = {
       text: 'name',
       value: 'id',
@@ -147,7 +115,7 @@
     
     
     const mapObj = Obj.mapObj
-    keepE == false && await useSpeak("开始运动")
+    keepE == false && await useSpeak(`开始运动 ${Obj.scheme.name}`)
     keepE == false && console.log('mapObj:',mapObj);
     // 循环组
     for( mapObj.i=i_;mapObj.i<=Obj.scheme.groupOfTimes;mapObj.i++){
@@ -169,14 +137,15 @@
             // 打拍
             // if(countdown.value==14){debugger}
             console.log(nowFrequency.value+'节', countdown.value+'拍',  mapObj.k)
-            speak(countdown.value.toString())
-            countdown.value++
             await beat(1)
+            pauseStatus.value == false && useSpeak(countdown.value.toString(),2)
+            countdown.value++
+            
 
             if(countdown.value == Obj.scheme.every_cycle_times+1){
               // 继续执行时，切频时节拍 k_ 置 1
               nowFrequency.value != 1 && console.log("休息5秒钟，下一节",nowFrequency.value, Obj.scheme.frequency, mapObj.j);
-              // nowFrequency.value != 1 && speak("休息5秒钟，下一节");
+              nowFrequency.value != 1 && useSpeak("休息5秒钟，下一节");
               if(keepE){k_ = 1}
               countdown.value = 1
             }
@@ -186,7 +155,7 @@
 
           if(nowFrequency.value>Obj.scheme.frequency){
             console.log("休息一会，下一组",nowFrequency.value, Obj.scheme.frequency, mapObj.j);
-            // nowGroup.value != 1 && speak("休息一会，下一组");
+            nowGroup.value != 1 && useSpeak("休息一会，下一组");
             if(keepE){j_ = 1}
             nowFrequency.value = 1
             // return
@@ -198,6 +167,7 @@
       }
     }
     console.log('运动结束')
+    useSpeak('运动结束')
     resetMapObj()
     nowGroup.value = 1
   }
@@ -221,5 +191,38 @@
   }
   const beat = (time:number)=>{
     return new Promise((resolve) => beater.value = setTimeout(resolve, time*1000));
+  }
+
+ 
+
+  const useSpeak = (text:string, rate = 1) => {
+    return new Promise(function(resolve, reject) {
+        // 创建 SpeechSynthesisUtterance 对象
+        const utterance = new SpeechSynthesisUtterance(text);
+
+        // 设置语音合成参数
+        utterance.lang = 'zh-CN';
+        utterance.volume = 1;
+        utterance.pitch = 1;
+        utterance.rate = rate;
+
+        const startTime = new Date()
+
+        // 监听 SpeakSynthesis 的 end 事件
+        utterance.onend = function() {
+          const endTime = new Date()
+          console.log((endTime.getTime() - startTime.getTime())/1000);
+          
+          resolve('end');
+        };
+
+        // 如果浏览器不支持 SpeechSynthesis，则返回错误
+        if (!('speechSynthesis' in window)) {
+          reject(new Error('Browser does not support SpeechSynthesis'));
+        }
+
+        // 开始语音合成
+        speechSynthesis.speak(utterance);
+    });
   }
   </script>

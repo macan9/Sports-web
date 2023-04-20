@@ -2,7 +2,7 @@ const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
   transpileDependencies: true,
   publicPath: "./",
-  outputDir: "docs",
+  outputDir: "dist",
   productionSourceMap: false,
   chainWebpack: config => {
     config.plugins.delete('preload')
