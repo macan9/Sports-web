@@ -1,17 +1,17 @@
-# vue3-demo
+# Sports-web
 
-update `<script setup>`  About.vue TodoList.vue
 
-## Project setup
+
+基于vue3、ts、及vant ui设计而成的运动计数器
+
+### Project setup
 ```
 npm install
 ```
-
-### Compiles and hot-reloads for development
+Compiles and hot-reloads for development
 ```
 npm run serve
 ```
-
 ### Compiles and minifies for production
 ```
 npm run build
@@ -24,6 +24,4 @@ npm run lint
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
-# vue3-ts-vant
-# vue3-ts-vant
-# vue-ts-vant
+

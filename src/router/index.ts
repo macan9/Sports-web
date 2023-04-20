@@ -16,8 +16,8 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/',
-    name: 'SportTiming',
-    component: () => import(/* webpackChunkName: "todo" */ '@/views/SportTiming.vue')
+    name: 'Sports',
+    component: () => import(/* webpackChunkName: "todo" */ '@/views/Sports.vue')
   },
   {
     path: '/todoList',
