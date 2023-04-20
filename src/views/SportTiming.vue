@@ -3,8 +3,8 @@
       <NoticeBar left-icon="volume-o" text="在代码阅读过程中人们说脏话的频率是衡量代码质量的唯一标准。" />
       <p class="mg20">This is a root element</p>
 
-      <Button type="primary" @click="beginExercise()" style="margin-right: 10px;">新建方案</Button>
-      <Button type="primary" @click="beginExercise()">管理方案</Button>
+      <!-- <Button type="primary" @click="beginExercise()" style="margin-right: 10px;">新建方案</Button>
+      <Button type="primary" @click="beginExercise()">管理方案</Button> -->
       <Picker
           title="选择方案"
           :columns="Obj.schemeList"
@@ -47,13 +47,44 @@
   import { Scheme } from "./sportTimingPages/scheme"
   import { localSchemeList } from "@/localData/localSchemeList";
 
-  import Speech from  "speak-tts"
 
   // ref() 函数用来根据给定的值创建一个  响应式的数据对象  ，传入的为 基本数据类型 例如字符串、数字、boolean 等,
   //       返回值是一个对象，这个对象上只包含一个 value 属性,改变值要.value,而且在template中不用写.value
   // reactive() 函数传入的为引用类型但不能代理基本类型值,返回一个  响应式的数据对象 , 想要使用创建的响应式数据也很简单，
   //            创建出来之后，在setup中return出去，直接在template中调用即可。
   // toRefs()  函数可以将 reactive() 创建出来的响应式对象，转换为普通的对象
+  
+  const speak = (text:string)=>{
+    useSpeak(text).then(()=>{
+      // console.log('播报完毕')
+    })
+  }
+
+  const useSpeak = (text:string) => {
+    return new Promise(function(resolve, reject) {
+        // 创建 SpeechSynthesisUtterance 对象
+        const utterance = new SpeechSynthesisUtterance(text);
+
+        // 设置语音合成参数
+        utterance.lang = 'zh-CN';
+        utterance.volume = 1;
+        utterance.pitch = 1;
+        utterance.rate = 1;
+
+        // 监听 SpeakSynthesis 的 end 事件
+        utterance.onend = function() {
+          resolve('end');
+        };
+
+        // 如果浏览器不支持 SpeechSynthesis，则返回错误
+        if (!('speechSynthesis' in window)) {
+          reject(new Error('Browser does not support SpeechSynthesis'));
+        }
+
+        // 开始语音合成
+        speechSynthesis.speak(utterance);
+    });
+  }
 
   const customFieldName = {
       text: 'name',
@@ -73,7 +104,6 @@
   let nowFrequency = ref(1)  // 节
   let countdown = ref(1)   // 节拍
   let beater = ref(0)  
-  let speech = ref()  
   let pauseStatus = ref(false)
   let isRest = ref(true)   
 
@@ -81,21 +111,7 @@
     Obj.scheme = JSON.parse(JSON.stringify(localSchemeList[0]))
     Obj.schemeList =JSON.parse(JSON.stringify(localSchemeList)) 
     // setTimeout(()=>{console.log(localSchemeList,Obj.schemeList)},1000)
-    speechInit()
   });
-
-  const speechInit = () => {
-     speech.value = new Speech();
-     speech.value.setLanguage('zh-CN');
-     speech.value.init().then(()=>{
-        console.log('语音播报初始化完成...')
-      })
-   }
-   const speak = (text:string) => {
-     speech.value.speak({text:text}).then(()=>{
-      //  console.log("播报完成...")
-     })
-   }
 
 
 
@@ -110,17 +126,17 @@
     resetMapObj()
     mainExercise()
   }
-  const pauseExercise = () => {
+  const pauseExercise = async () => {
     if(pauseStatus.value == false){
       pauseStatus.value = true
       Obj.mapObj.k--
       countdown.value--
       console.log('暂停执行')
-      speak("暂停执行")
+      await useSpeak("暂停执行")
     }else{
       pauseStatus.value = false
       console.log('继续执行')
-      speak("继续执行")
+      await useSpeak("继续执行")
       const mapObj = Obj.mapObj
       mainExercise(true,mapObj.i,mapObj.j,mapObj.k)
     }
@@ -131,9 +147,8 @@
     
     
     const mapObj = Obj.mapObj
-    keepE == false && speak("开始运动")
+    keepE == false && await useSpeak("开始运动")
     keepE == false && console.log('mapObj:',mapObj);
-    ("开始运动")
     // 循环组
     for( mapObj.i=i_;mapObj.i<=Obj.scheme.groupOfTimes;mapObj.i++){
       if(nowGroup.value > Obj.scheme.groupOfTimes ){
@@ -142,13 +157,10 @@
         
         // 循环每一节 
         for( mapObj.j=j_; mapObj.j<=Obj.scheme.frequency;mapObj.j++){
-          
-          
-
 
           // 每一拍
           console.log(`正在运行第${nowGroup.value }组,第${nowFrequency.value}节`);
-          speak(`正在运行第${nowGroup.value }组,第${nowFrequency.value}节`)
+          await useSpeak(`正在运行第${nowGroup.value }组,第${nowFrequency.value}节`)
           for( mapObj.k=k_; mapObj.k<=Obj.scheme.every_cycle_times;mapObj.k++){
             if(pauseStatus.value == true){
               return
@@ -157,14 +169,14 @@
             // 打拍
             // if(countdown.value==14){debugger}
             console.log(nowFrequency.value+'节', countdown.value+'拍',  mapObj.k)
-            countdown.value++
             speak(countdown.value.toString())
+            countdown.value++
             await beat(1)
 
             if(countdown.value == Obj.scheme.every_cycle_times+1){
               // 继续执行时，切频时节拍 k_ 置 1
               nowFrequency.value != 1 && console.log("休息5秒钟，下一节",nowFrequency.value, Obj.scheme.frequency, mapObj.j);
-              nowFrequency.value != 1 && speak("休息5秒钟，下一节");
+              // nowFrequency.value != 1 && speak("休息5秒钟，下一节");
               if(keepE){k_ = 1}
               countdown.value = 1
             }
@@ -174,12 +186,11 @@
 
           if(nowFrequency.value>Obj.scheme.frequency){
             console.log("休息一会，下一组",nowFrequency.value, Obj.scheme.frequency, mapObj.j);
-            nowGroup.value != 1 && speak("休息一会，下一组");
+            // nowGroup.value != 1 && speak("休息一会，下一组");
             if(keepE){j_ = 1}
             nowFrequency.value = 1
             // return
           }
-          
           
         }
         await rest(Obj.scheme.groupInterval) // 休息间隔
